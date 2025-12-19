@@ -1,0 +1,1 @@
+{{ gatus_compose | combine(gatus_override, recursive=true, list_merge='append_rp') | to_nice_yaml(indent=2, sort_keys=true) | indent(0) }}
