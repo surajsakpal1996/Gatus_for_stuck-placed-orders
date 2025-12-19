@@ -1,0 +1,8 @@
+---
+- name: Deploy Gatus Monitoring Services
+  hosts: monitoring_hosts
+  gather_facts: false
+  become: false
+  roles:
+    - gatus
+
