@@ -1,0 +1,9 @@
+#!/bin/sh
+docker login 2> /dev/null
+
+{% if not gatus_stack_type_is_compose %}
+docker stack deploy --prune --detach=true --with-registry-auth --compose-file {{ gatus_stack_dir }}/compose.yml {{ gatus_stack_name }}
+
+{% else %}
+docker compose -f {{ gatus_stack_dir }}/compose.yml up -d --remove-orphans
+{% endif %}
