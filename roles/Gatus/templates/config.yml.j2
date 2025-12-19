@@ -1,0 +1,62 @@
+alerting:
+  email:
+    to: "{{ gatus_mail_to }}"
+    host: "{{ gatus_mail_server }}"
+    port: {{ gatus_mail_port }}
+    from: "{{ gatus_mail_from }}"
+    {% if gatus_mail_insecure |default(false) -%}
+    client:
+      insecure: true
+    {% endif -%}
+    default-alert:
+      failure-threshold: 3
+      success-threshold: 3
+      send-on-resolved: true
+
+  teams:
+    webhook-url: "{{ gatus_teams_webhook }}"
+    default-alert:
+      failure-threshold: 3
+      success-threshold: 3
+      send-on-resolved: true
+
+{% if gatus_maintenance_window is defined and gatus_maintenance_window | length > 0 %}
+maintenance:
+{% for mw in gatus_maintenance_window %}
+  - start: "{{ mw.start }}"
+    end: "{{ mw.end }}"
+    timezone: "{{ mw.timezone | default('UTC') }}"
+{% endfor %}
+{% endif %}
+
+endpoints:
+{% for endpoint in gatus_endpoints %}
+  - name: "{{ endpoint.name | default(endpoint.domain) }}"
+    url: "{{ endpoint.url | default('https://' ~ endpoint.domain) }}"
+    group: "{{ endpoint.group | default('') }}"
+    interval: "{{ endpoint.interval | default('60s') }}"
+    conditions:
+{% set conds = endpoint.conditions | default(['[STATUS] == ' ~ (endpoint.status | default(gatus_default_endpoint_status))]) %}
+{% for c in conds %}
+      - "{{ c }}"
+{% endfor %}
+    alerts:
+      - type: "email"
+      - type: "teams"
+{% if endpoint.ssl_expiry_check | default(false) %}
+    ssl_expiry_hours: {{ endpoint.ssl_expiry_hours | default(72) }}
+{% endif %}
+{% if endpoint['maintenance-window'] | default({}) | length() > 0 %}
+    maintenance-windows:
+      {{ endpoint['maintenance-window'] | to_nice_yaml(2) | indent(6) }}
+{% endif %}
+{% endfor %}
+
+storage:
+  type: sqlite
+  path: /data/data.db
+
+ui:
+  title: {{ gatus_ui_title }}
+  dashboard-heading: {{ gatus_ui_dashboard_heading }}
+  dashboard-subheading: {{ gatus_ui_dashboard_subheading }}
