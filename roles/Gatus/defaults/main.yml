@@ -22,16 +22,11 @@ gatus_teams_webhook: "https://webhook.example.com/abc"
 
 # Endpoints
 gatus_endpoints:
-  - name: "Igefa Store"
-    url: "https://store.igefa.de/guest"
-  - name: "ICUP Project"
-    url: "https://env.icup.dev"
-  - name: "Home Swarm"
-    url: "https://home-swarm.icup.dev"
-  - name: "Home Production"
-    url: "https://home-prod.icup.dev"
-  - name: "Home DevOps"
-    url: "https://home-devops.icup.dev"
+  - name: staging-back-stuck-placed-orders
+    url: "https://staging-back.icup.dev/api/monitoring/stuck-placed-orders"
+    conditions:
+    - "[STATUS] == 200"
+    - "[BODY] =~ ^0$"
 
 
 gatus_compose:
