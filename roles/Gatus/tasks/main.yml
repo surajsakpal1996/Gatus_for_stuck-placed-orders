@@ -1,0 +1,50 @@
+---
+- name: Ensure gatus directory exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ gatus_stack_dir }}"
+    - "{{ gatus_stack_dir }}/config"
+    - "{{ gatus_stack_dir }}/data"
+
+- name: Render Gatus configuration
+  template:
+    src: config.yml.j2
+    dest: "{{ gatus_stack_dir }}/config/config.yml"
+    mode: '0644'
+
+- name: Render docker compose stack
+  template:
+    src: compose.yml.j2
+    dest: "{{ gatus_stack_dir }}/compose.yml"
+    mode: '0644'
+
+- name: Render deployment helper
+  template:
+    src: deploy.sh.j2
+    dest: "{{ gatus_stack_dir }}/deploy.sh"
+    mode: '0755'
+
+- name: Deploy Gatus Stack (swarm)
+  community.docker.docker_stack:
+    name: "{{ gatus_stack_name }}"
+    compose:
+      - "{{ gatus_stack_dir }}/compose.yml"
+    with_registry_auth: true
+    prune: true
+    state: present
+  when:
+    - not gatus_stack_type_is_compose
+    - node_is_swarm_leader | default(false)
+    - docker_stack_start_enabled | default (true)
+
+- name: Deploy Gatus using docker compose
+  when:
+    - gatus_stack_type_is_compose
+    - docker_stack_start_enabled | default (true)
+  community.docker.docker_compose_v2:
+    project_src: "{{ gatus_stack_dir }}"
+    remove_orphans: true
+    state: present
