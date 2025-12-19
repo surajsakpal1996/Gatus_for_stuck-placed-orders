@@ -1,0 +1,62 @@
+---
+gatus_stack_dir: /srv/stacks/gatus
+gatus_stack_name: gatus
+
+gatus_default_endpoint_status: 200
+gatus_image_tag: v5.32.0
+gatus_stack_type_is_compose: false
+gatus_timezone: Etc/UTC
+
+# ui customization (empty to use the respective gatus default)
+gatus_ui_dashboard_heading: ""
+gatus_ui_dashboard_subheading: ""
+gatus_ui_title: ""
+
+# Alerts
+gatus_mail_from: "mail@example.com"
+gatus_mail_insecure: false
+gatus_mail_port: 1025
+gatus_mail_server: "mailpit"
+gatus_mail_to: "mail@example.com"
+gatus_teams_webhook: "https://webhook.example.com/abc"
+
+# Endpoints
+gatus_endpoints:
+  - name: "Igefa Store"
+    url: "https://store.igefa.de/guest"
+  - name: "ICUP Project"
+    url: "https://env.icup.dev"
+  - name: "Home Swarm"
+    url: "https://home-swarm.icup.dev"
+  - name: "Home Production"
+    url: "https://home-prod.icup.dev"
+  - name: "Home DevOps"
+    url: "https://home-devops.icup.dev"
+
+
+gatus_compose:
+  services:
+    gatus:
+      image: "twinproduction/gatus:{{ gatus_image_tag }}"
+      environment:
+        TZ: "{{ gatus_timezone }}"
+        CONFIG_CHECKSUM: "{{ lookup('ansible.builtin.template', 'config.yml.j2') | checksum }}"
+      networks:
+        - gatus
+      volumes:
+        - "{{ gatus_stack_dir }}/config:/config"
+        - "{{ gatus_stack_dir }}/data:/data"
+
+  networks:
+    gatus:
+      driver: "{{ 'overlay' if not gatus_stack_type_is_compose else 'bridge' }}"
+      driver_opts:
+        encrypted: "{{ 'true' if not gatus_stack_type_is_compose else 'ignored-for-compose' }}"
+
+
+gatus_override:  # defaults for a local compose, can be completely overwritten
+  services:
+    gatus:
+      ports:
+        - "8080:8080"
+      restart: "always"
